@@ -1,4 +1,8 @@
-import { inject, reactive } from "vue";
+import { inject, reactive, computed } from "vue";
+
+export function forEachValue(obj, fn) {
+  Object.keys(obj).forEach((key) => fn(obj[key], key));
+}
 
 /**
  * 创建容器，返回一个store
@@ -20,7 +24,45 @@ class Store {
      */
     // store._state.data
     store._state = reactive({ data: options.state });
+
+    /**
+     * 实现getters
+     */
+    const _getters = options.getters; // {getter1: fn1, getter2: fn2}
+    store.getters = {};
+    forEachValue(_getters, function (fn, key) {
+      Object.defineProperty(store.getters, key, {
+        get: computed(() => fn(store.state)), // 用 computed 对 getters 进行缓存（vue3.2之后才支持使用computed对getter进行缓存）
+      });
+    });
+
+    /**
+     * 实现mutation和actions
+     * 使用Object.create(null)创建空对象没有原型链，而使用 {} 创建空对象是由原型链的。
+     *
+     */
+    store._mutations = Object.create(null);
+    store._actions = Object.create(null);
+    const _mutations = options.mutations;
+    const _actions = options.actions;
+    forEachValue(_mutations, (mutation, key) => {
+      store._mutations[key] = (payload) => {
+        mutation.call(store, store.state, payload);
+      };
+    });
+    forEachValue(_actions, (action, key) => {
+      store._actions[key] = (payload) => {
+        action.call(store, store, payload);
+      };
+    });
   }
+  // commit、dispatch必须写成箭头函数，来保证commit、dispatch里面的this指向store实例
+  commit = (type, payload) => {
+    this._mutations[type](payload);
+  };
+  dispatch = (type, payload) => {
+    this._actions[type](payload);
+  };
   get state() {
     return this._state.data;
   }

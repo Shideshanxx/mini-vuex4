@@ -4,8 +4,8 @@
     <hr />
     <!-- {{ double }} {{ $store.getters.double }} -->
     <button @click="$store.state.count++">错误地直接修改state</button>
-    <!-- <button @click="add">提交mutation修改</button>
-    <button @click="asyncAdd">提交action修改</button> -->
+    <button @click="add">提交mutation修改</button>
+    <button @click="asyncAdd">提交action修改</button>
   </div>
 </template>
 
