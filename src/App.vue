@@ -1,26 +1,45 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div>
+    {{ count }} {{ $store.state.count }}
+    <hr />
+    <!-- {{ double }} {{ $store.getters.double }} -->
+    <button @click="$store.state.count++">错误地直接修改state</button>
+    <!-- <button @click="add">提交mutation修改</button>
+    <button @click="asyncAdd">提交action修改</button> -->
+  </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import { computed } from "vue";
+import { useStore } from "@/vuex";
+
+function useCount(store) {
+  function add() {
+    store.commit("add", 1);
+  }
+  function asyncAdd() {
+    store.dispatch("asyncAdd", 1);
+  }
+  return { add, asyncAdd };
+}
 
 export default {
-  name: 'App',
-  components: {
-    HelloWorld
-  }
-}
+  name: "App",
+  setup() {
+    const store = useStore("my");
+    console.log(store);
+    function add() {
+      store.commit("add", 1);
+    }
+    function asyncAdd() {
+      store.dispatch("asyncAdd", 1);
+    }
+    return {
+      count: computed(() => store.state.count),
+      double: computed(() => store.getters.double),
+      add,
+      asyncAdd,
+    };
+  },
+};
 </script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
