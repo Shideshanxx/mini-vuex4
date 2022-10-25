@@ -1,8 +1,13 @@
 <template>
   <div>
-    {{ count }} {{ $store.state.count }}
+    count：{{ count }}
     <hr />
-    <!-- {{ double }} {{ $store.getters.double }} -->
+    getter：{{ double }}
+    <hr />
+    a模块：{{ aCount }} b模块：{{ bCount }} <br />
+    <button @click="$store.commit('aCount/add', 1)">改a</button>
+    <button @click="$store.commit('bCount/add', 1)">改b</button>
+    <hr />
     <button @click="$store.state.count++">错误地直接修改state</button>
     <button @click="add">提交mutation修改</button>
     <button @click="asyncAdd">提交action修改</button>
@@ -37,6 +42,8 @@ export default {
     return {
       count: computed(() => store.state.count),
       double: computed(() => store.getters.double),
+      aCount: computed(() => store.state.aCount.count),
+      bCount: computed(() => store.state.bCount.count),
       add,
       asyncAdd,
     };
