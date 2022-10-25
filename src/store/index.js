@@ -1,5 +1,20 @@
 import { createStore } from "@/vuex";
 
+// vuex插件就是一个函数
+// 实现一个数据持久化插件
+function persistedStatePlugin(store) {
+  // 从缓存中读取数据，并替换store中的state
+  let local = localStorage.getItem("VUEX:STATE");
+  if (local) {
+    store.replaceState(JSON.parse(local));
+  }
+  // 每当状态变化（执行了mutation），就会执行subscribe的回调
+  store.subscribe((mutation, state) => {
+    // 缓存状态
+    localStorage.setItem("VUEX:STATE", JSON.stringify(state));
+  });
+}
+
 // vue2 中通过 new Store 创建仓库，vue3中通过 createStore 创建仓库
 export default createStore({
   // 类似于组件中的data
@@ -61,7 +76,10 @@ export default createStore({
       },
     },
   },
-  strict: true, // 开启严格模式，只能在mutation中修改状态，否则会提示错误
+  // 开启严格模式，只能在mutation中同步修改状态，否则会提示错误
+  strict: true,
+  // 插件会按照注册顺序依次执行
+  plugins: [persistedStatePlugin],
 });
 
 // 严格模式

@@ -103,6 +103,7 @@ function enableStricMode(store) {
   watch(
     () => store._state.data,
     () => {
+      // console.assert：如果第一个参数为 false，则在控制台输出信息
       console.assert(
         store._commiting,
         "do not mutate vuex store state outside mutation handlers"
@@ -137,11 +138,21 @@ export default class Store {
     // 2. 定义状态
     const state = store._modules.root.state; // 根状态
     installModule(store, state, [], store._modules.root);
-
     // 将state（store._modules.root.state）代理到store上
     resetStoreState(store, state);
 
-    console.log(store);
+    // 执行插件
+    store._subscribers = [];
+    options.plugins.forEach((plugin) => plugin(store));
+  }
+  subscribe(fn) {
+    this._subscribers.push(fn);
+  }
+  replaceState(newState) {
+    // 直接修改state会报错，所以使用 _withCommit 包裹一下
+    this._withCommit(() => {
+      this._state.data = newState;
+    });
   }
   get state() {
     return this._state.data;
@@ -151,6 +162,8 @@ export default class Store {
     this._withCommit(() => {
       entry.forEach((handler) => handler(payload));
     });
+    // 每次 commit 的时候执行所有的 subscribers
+    this._subscribers.forEach((sub) => sub({ type, payload }, this.state));
   };
   dispatch = (type, payload) => {
     const entry = this._actions[type] || [];
