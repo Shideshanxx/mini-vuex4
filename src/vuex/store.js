@@ -1,4 +1,4 @@
-import { reactive } from "vue";
+import { reactive, watch } from "vue";
 import { storeKey } from "./injectKey";
 import ModuleCollection from "./module/module-collection";
 import { isPromise, forEachValue } from "./utils";
@@ -94,9 +94,32 @@ function resetStoreState(store, state) {
       get: () => getter(), // 在vue3.2版本后，可以用 computed 对 getter 值进行缓存
     });
   });
+  if (store.strict) {
+    enableStricMode(store);
+  }
+}
+function enableStricMode(store) {
+  // 监控数据变化
+  watch(
+    () => store._state.data,
+    () => {
+      console.assert(
+        store._commiting,
+        "do not mutate vuex store state outside mutation handlers"
+      );
+    },
+    { deep: true, flush: "sync" } // watch 默认是异步的，这里改成同步（状态改变立刻执行回调）监听
+  );
 }
 
 export default class Store {
+  // 先把 this._commiting 改为 true，执行fn后，再将 this._commiting 改回去；如果fn是同步的，则在fn中this._commiting为true。
+  _withCommit(fn) {
+    const commiting = this._commiting;
+    this._commiting = true;
+    fn();
+    this._commiting = commiting;
+  }
   constructor(options) {
     const store = this;
     // 1. 数据格式化
@@ -106,6 +129,10 @@ export default class Store {
     store._wrappedGetters = Object.create(null);
     store._mutations = Object.create(null);
     store._actions = Object.create(null);
+
+    // 严格模式；严格模式下 mutation必须同步
+    this.strict = options.strict || false;
+    this._commiting = false;
 
     // 2. 定义状态
     const state = store._modules.root.state; // 根状态
@@ -121,7 +148,9 @@ export default class Store {
   }
   commit = (type, payload) => {
     const entry = this._mutations[type] || [];
-    entry.forEach((handler) => handler(payload));
+    this._withCommit(() => {
+      entry.forEach((handler) => handler(payload));
+    });
   };
   dispatch = (type, payload) => {
     const entry = this._actions[type] || [];

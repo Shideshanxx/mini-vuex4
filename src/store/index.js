@@ -61,7 +61,7 @@ export default createStore({
       },
     },
   },
-  strict: true,
+  strict: true, // 开启严格模式，只能在mutation中修改状态，否则会提示错误
 });
 
 // 严格模式
