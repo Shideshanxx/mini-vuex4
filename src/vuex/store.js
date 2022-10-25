@@ -38,6 +38,9 @@ function getNestedState(state, path) {
 
 function installModule(store, rootState, path, module) {
   let isRoot = !path.length;
+
+  const namespaced = store._modules.getNamespaced(path);
+
   if (!isRoot) {
     let parentState = path
       .slice(0, -1)
@@ -47,13 +50,15 @@ function installModule(store, rootState, path, module) {
 
   // getters  module._raw.getters
   module.forEachGetter((getter, key) => {
-    store._wrappedGetters[key] = () => {
+    store._wrappedGetters[namespaced + key] = () => {
       return getter(getNestedState(store.state, path)); //  getter(module.state) 不可行，因为如果直接使用模块自己的状态，此状态不是响应式的
     };
   });
   // mutation：{add: [mutation1,mutation2], double: [mutation3]} 不同modules中的同名mutation放到同一个数组中
   module.forEachMutation((mutation, key) => {
-    const entry = store._mutations[key] || (store._mutations[key] = []);
+    const entry =
+      store._mutations[namespaced + key] ||
+      (store._mutations[namespaced + key] = []);
     entry.push((payload) => {
       // 也通过 getNestedState(store.state, path) 获取module的最新状态
       mutation.call(store, getNestedState(store.state, path), payload);
@@ -61,7 +66,9 @@ function installModule(store, rootState, path, module) {
   });
   // action：【action执行完返回一个Promise】
   module.forEachAction((action, key) => {
-    const entry = store._actions[key] || (store._actions[key] = []);
+    const entry =
+      store._actions[namespaced + key] ||
+      (store._actions[namespaced + key] = []);
     entry.push((payload) => {
       let res = action.call(store, store, payload);
       if (!isPromise(res)) {
