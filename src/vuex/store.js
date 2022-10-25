@@ -45,7 +45,9 @@ function installModule(store, rootState, path, module) {
     let parentState = path
       .slice(0, -1)
       .reduce((state, key) => state[key], rootState);
-    parentState[path[path.length - 1]] = module.state;
+    store._withCommit(() => {
+      parentState[path[path.length - 1]] = module.state;
+    });
   }
 
   // getters  module._raw.getters
@@ -172,5 +174,17 @@ export default class Store {
   install(app, injectKey) {
     app.provide(injectKey || storeKey, this);
     app.config.globalProperties.$store = this;
+  }
+  registerModule(path, rawModule) {
+    const store = this;
+    if (typeof path === "string") {
+      path = [path];
+    }
+    // 1. 在原有模块基础上新增加一个
+    const newModule = store._modules.register(rawModule, path);
+    // 2. 再把模块安装上
+    installModule(store, store.state, path, newModule);
+    // 3. 重置容器
+    resetStoreState(store, store.state);
   }
 }

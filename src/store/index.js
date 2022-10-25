@@ -16,7 +16,7 @@ function persistedStatePlugin(store) {
 }
 
 // vue2 中通过 new Store 创建仓库，vue3中通过 createStore 创建仓库
-export default createStore({
+const store = createStore({
   // 类似于组件中的data
   state: {
     count: 0,
@@ -54,17 +54,17 @@ export default createStore({
           state.count += payload;
         },
       },
-      modules: {
-        cCount: {
-          namespaced: true,
-          state: { count: 0 },
-          mutations: {
-            add(state, payload) {
-              state.count += payload;
-            },
-          },
-        },
-      },
+      // modules: {
+      //   cCount: {
+      //     namespaced: true,
+      //     state: { count: 0 },
+      //     mutations: {
+      //       add(state, payload) {
+      //         state.count += payload;
+      //       },
+      //     },
+      //   },
+      // },
     },
     bCount: {
       namespaced: true,
@@ -82,5 +82,14 @@ export default createStore({
   plugins: [persistedStatePlugin],
 });
 
-// 严格模式
-// dispatch(action) => commit(mutation) => 修改状态
+store.registerModule(["aCount", "cCount"], {
+  namespaced: true,
+  state: { count: 0 },
+  mutations: {
+    add(state, payload) {
+      state.count += payload;
+    },
+  },
+});
+
+export default store;
