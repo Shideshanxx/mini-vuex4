@@ -8,9 +8,9 @@
     <button @click="$store.commit('aCount/add', 1)">改a</button>
     <button @click="$store.commit('bCount/add', 1)">改b</button>
     <hr />
-    <button @click="$store.state.count++">错误地直接修改state</button>
-    <button @click="add">提交mutation修改</button>
-    <button @click="asyncAdd">提交action修改</button>
+    <button @click="$store.state.count++">直接修改state</button>
+    <button @click="add">同步修改</button>
+    <button @click="asyncAdd">异步修改</button>
   </div>
 </template>
 
@@ -18,26 +18,17 @@
 import { computed } from "vue";
 import { useStore } from "@/vuex";
 
-function useCount(store) {
-  function add() {
-    store.commit("add", 1);
-  }
-  function asyncAdd() {
-    store.dispatch("asyncAdd", 1);
-  }
-  return { add, asyncAdd };
-}
-
 export default {
   name: "App",
   setup() {
     const store = useStore("my");
-    console.log(store);
     function add() {
       store.commit("add", 1);
     }
     function asyncAdd() {
-      store.dispatch("asyncAdd", 1);
+      store.dispatch("asyncAdd", 1).then(() => {
+        console.log("ok");
+      });
     }
     return {
       count: computed(() => store.state.count),

@@ -8,7 +8,7 @@ export default createStore({
   },
   // 类似于计算属性（不过 vuex4 中并没有实现计算属性）
   getters: {
-    double(state) {
+    double: (state) => {
       return state.count * 2;
     },
   },
@@ -21,9 +21,12 @@ export default createStore({
   // 可以是同步或者异步，可以调用其它的action 或 mutation
   actions: {
     asyncAdd({ commit }, payload) {
-      setTimeout(() => {
-        commit("add", payload);
-      }, 1000);
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          commit("add", payload);
+          resolve();
+        }, 1000);
+      });
     },
   },
   // 子模块实现逻辑拆分
