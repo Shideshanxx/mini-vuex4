@@ -125,8 +125,9 @@ export default class Store {
   }
   constructor(options) {
     const store = this;
-    // 1. 数据格式化
+    // 1. modules 数据格式化
     store._modules = new ModuleCollection(options);
+    console.log(store);
 
     // 在store上定义变量，用来存储getters、mutations、actions
     store._wrappedGetters = Object.create(null);
@@ -137,9 +138,10 @@ export default class Store {
     this.strict = options.strict || false;
     this._commiting = false;
 
-    // 2. 定义状态
+    // 2. 改造 store._modules.root.state
     const state = store._modules.root.state; // 根状态
     installModule(store, state, [], store._modules.root);
+
     // 将state（store._modules.root.state）代理到store上
     resetStoreState(store, state);
 

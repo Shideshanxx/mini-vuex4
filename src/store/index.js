@@ -69,6 +69,11 @@ const store = createStore({
     bCount: {
       namespaced: true,
       state: { count: 0 },
+      getters: {
+        hahaha: (state) => {
+          return state.count * 2;
+        },
+      },
       mutations: {
         add(state, payload) {
           state.count += payload;

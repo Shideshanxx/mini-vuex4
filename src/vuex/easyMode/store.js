@@ -1,3 +1,7 @@
+/**
+ * 没有modules的简单版本
+ */
+
 import { forEachValue } from "./urils";
 import { reactive, computed } from "vue";
 import { storeKey } from "./injectKey";
