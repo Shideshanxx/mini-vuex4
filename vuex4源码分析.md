@@ -1,35 +1,35 @@
 ## 前言
 Vuex 是一个专为 Vue.js 应用程序开发的 **状态管理模式** 。它借鉴了Flux、redux的基本思想，将共享的数据抽离到全局，同时利用Vue.js的 **响应式** 机制来进行高效的状态管理与更新。想要掌握了解基础知识可以查阅Vuex官网，本篇主要是对 [vuex4.x版本的源码](https://github.com/vuejs/vuex) 进行研究分析。
 ## Vuex 核心原理
-使用方式：
+### 使用方式
 1. 创建 `store`
     ```js
     import { createStore } from "@/vuex";
 
     const store = createStore({
-    state: {
-        count: 0,
-    },
-    getters: {
-        double: (state) => {
-        return state.count * 2;
-        },
-    },
-    mutations: {
-        add(state, payload) {
-        state.count += payload;
-        },
-    },
-    actions: {
-        asyncAdd({ commit }, payload) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-            commit("add", payload);
-            resolve();
-            }, 1000);
-        });
-        },
-    },
+      state: {
+          count: 0,
+      },
+      getters: {
+          double: (state) => {
+          return state.count * 2;
+          },
+      },
+      mutations: {
+          add(state, payload) {
+          state.count += payload;
+          },
+      },
+      actions: {
+          asyncAdd({ commit }, payload) {
+          return new Promise((resolve, reject) => {
+              setTimeout(() => {
+              commit("add", payload);
+              resolve();
+              }, 1000);
+          });
+          },
+      },
     });
 
     export default store;
@@ -80,19 +80,22 @@ Vuex 是一个专为 Vue.js 应用程序开发的 **状态管理模式** 。它�
     </script>
     ```
 
+### vuex 运行流程 
+
 [Vuex](https://vuex.vuejs.org/zh/) 的运作流程如下图所示：
 ![vuex](https://vuex.vuejs.org/vuex.png)
 
-核心原理：
+### 核心原理
 + `vuex4` 是一个插件，所以创建的 `store` 实例需要实现一个 `install` 方法
-+ `vuex4` 需要导出 `createStore`，用于创建 `store` ，接受一个 `options` 对象，
++ `vuex4` 需要导出 `createStore`，用于创建 `store` ，接收一个 `options` 对象，
 + `vuex4` 需要导出 `useStore` ，用于在组件中使用 `store` 
 + `store` 是一个全局状态库，并且是响应式的，可以在各个组件中使用 `store` 中的状态
 + 可以创建多个 `store` 实例，通过 `key` 标识来区分不同的 `store`
 
 ## 实现一个简易版的 vuex
-首先不考虑 `modules`、插件、严格模式、动态模块等功能，实现一个简易版的vuex；该版本包含的功能有：
-1. `state` 的派发和注册
+首先不考虑 `modules`、插件、严格模式、动态模块等功能，实现一个简易版的vuex；
+该版本包含的功能有：
+1. `store` 的派发和注册
 2. `state` 的响应式
 3. `getters`、`mutations`、`actions`、`commit`、`dispatch`
 4. 通过 `key` 标识多个 `store`
@@ -133,7 +136,7 @@ export function useStore(injectKey = storeKey) {
 
 #### 实现 getters、mutations、actions、commit、dispatch
 + `getters` 的实现：将 `options.getters` 代理到 `store.getters`，并传入参数 `store.state`；在vue3.2以上版本，可以使用 `computed` 实现 `getters` 的缓存。
-+ `mutations` 的实现：将 `options.mutations` 代理到 `store._mutations` 上，绑定 `mutation` 的 `this` 为 `store`，并传入参数 `store.state` 和 `payload` ；`actions` 的实现类似。
++ `mutations` 的实现：将 `options.mutations` 代理到 `store._mutations` 上，将 `mutation` 内部的 `this` 指向 `store`，并传入参数 `store.state` 和 `payload` ；`actions` 的实现类似。
 + `commit` 和 `dispatch` 的实现：它们是一个函数，通过传入的 `type` 和 `payload` 匹配并执行对应的 `mutation` 和 `action `
 
 ```js
@@ -195,7 +198,7 @@ class Store {
 ```
 
 ## 源码解析
-当项目变得复杂，我们就不得不使用 `modules` 让项目结构更清晰，更具可维护性。
+当项目变得复杂，我们就不得不使用 `modules` 让项目结构更清晰，更具可维护性；同时引入严格模式、插件系统、动态modules等功能。
 ### ModuleCollection
 `modules` 包含 `rootModule` 以及 `options.modules` 中的各个子模块，我们 **期望将用户传入的所有 `module` 转化成以下树状结构，并存放到 `store._modules` 变量中** ：
 ```js
@@ -291,7 +294,7 @@ export default class Module {
 }
 ```
 
-#### installModule
+### installModule
 另外，当我们取子 `module` 中的 `state` 时，采用的方式是：`store.state.moduleA.count`，是直接从`store.state` 上链式获取的。我们 **期望在 `store._state` 上包含所有 `modules` 中的数据，其结构如下** ：
 ```js
 {
@@ -336,7 +339,7 @@ export default class Store {
 }
 ```
 
-#### resetStoreState
+### resetStoreState
 创建 `store._wrappedGetters`、`store._mutations`、`store._actions` 用来存储所有模块的 `getters`、`mutations`、`actions`，期望的格式如下：
 ```js
 store: {
@@ -484,7 +487,7 @@ export default class Store {
 }
 ```
 
-#### namespaced
+### namespaced
 在没有设置命名空间的情况下，模块内部的 `action`、 `mutation` 和 `getters` 是注册在全局命名空间的，这样可能会导致多个模块对同一个 `action` 或 `mutation` 作出响应。启用命名空间会让模块内部的状态拥有私有局部空间，不受其他模块影响。
 首先修改 `Module` 类，增加一个 `namespaced` 属性：
 ```js
@@ -551,7 +554,7 @@ function installModule(store, rootState, path, module) {
 }
 ```
 
-#### 严格模式
+### 严格模式
 用户在 `options` 中通过 `strict: true` 开启严格模式；
 + 在严格模式中，`mutation` 只能执行同步操作
 + 修改 `store` 的状态只能在 `mutation` 中进行
@@ -609,7 +612,7 @@ export default class Store {
 }
 ```
 
-#### 插件系统
+### 插件系统
 手写一个状态持久化插件：
 ```js
 // vuex插件就是一个函数
@@ -667,7 +670,7 @@ export default class Store {
 }
 ```
 
-#### store.registerModule
+### store.registerModule
 vuex 可以使用store.registerModule 动态注册modules，使用方式如下：
 ```js
 import { createStore } from "@/vuex";
@@ -737,8 +740,4 @@ export default class Store {
 
 ## 写在最后
 本篇主要是对 vuex4.0 源码的学习总结，源代码仓库可以查看 [mini-vuex4](https://github.com/Shideshanxx/mini-vuex4)。如果本篇对你有所帮助，欢迎点赞收藏，顺便给个 star ～～。
-
-
-
-
 
